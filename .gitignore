@@ -1,0 +1,4 @@
+apikey.env
+.env
+myvenv/
+__pycache__/
