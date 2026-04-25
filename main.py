@@ -6,7 +6,7 @@ import os
 import json
 
 # Load environment variables
-load_dotenv("apikey.env")
+load_dotenv()
 
 app = FastAPI()
 
