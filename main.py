@@ -1,14 +1,16 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from groq import Groq
-import json
 from dotenv import load_dotenv
 import os
-load_dotenv(dotenv_path="apikey.env")
+import json
+
+# Load environment variables
+load_dotenv("apikey.env")
 
 app = FastAPI()
 
-# CORS (so frontend can connect)
+# CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -17,25 +19,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Groq client
-print("API KEY:", os.getenv("GROQ_API_KEY"))
-import os
+# Groq client (SAFE FOR DEPLOYMENT)
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
-# System prompt (STRICT STRUCTURE)
+# AI System Prompt
 SYSTEM_PROMPT = """
 You are an AI Decision Simulator.
 
-Your job is to help users make decisions by analyzing options, risks, benefits, and outcomes.
+Return ONLY valid JSON.
 
-IMPORTANT RULES:
-- Respond ONLY in valid JSON
-- No markdown
-- No explanations
-- No extra text
-
-Use this structure:
-
+Format:
 {
   "decision": "",
   "options": [
@@ -53,21 +46,25 @@ Use this structure:
 }
 """
 
+# Root route
 @app.get("/")
 def home():
-    return {"message": "AI Decision Simulator API is running"}
+    return {"message": "AI Decision Simulator API running"}
+
+# Health check (important for deployment)
 @app.get("/health")
 def health():
     return {"status": "ok"}
 
+# Main AI endpoint
 @app.post("/generate")
 def generate(data: dict):
-    user_input = data.get("input")
-
-    if not user_input:
-        return {"error": "No input provided"}
-
     try:
+        user_input = data.get("input")
+
+        if not user_input:
+            return {"error": "No input provided"}
+
         response = client.chat.completions.create(
             model="llama-3.1-8b-instant",
             messages=[
@@ -78,22 +75,21 @@ def generate(data: dict):
 
         raw_output = response.choices[0].message.content
 
-        # Clean possible markdown artifacts
+        # Clean markdown if any
         raw_output = raw_output.replace("```json", "").replace("```", "").strip()
 
-        # Convert to JSON
+        # Convert to JSON safely
         try:
-            json_output = json.loads(raw_output)
-            return json_output
+            return json.loads(raw_output)
         except json.JSONDecodeError:
             return {
-                "error": "Invalid AI response format",
-        "raw": raw_output
+                "error": "Model returned invalid JSON",
+                "raw": raw_output
             }
-        return parsed_output
+
     except Exception as e:
         return {
-            "error": "Something went wrong",
+            "error": "Server error",
             "details": str(e)
         }
    
