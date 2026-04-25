@@ -67,8 +67,7 @@ def generate(data: dict):
     try:
         user_input = data.get("input")
 
-        if not user_input:
-            return {"error": "No input provided"}
+        print("INPUT:", user_input)
 
         response = client.chat.completions.create(
             model="llama-3.1-8b-instant",
@@ -78,23 +77,11 @@ def generate(data: dict):
             ]
         )
 
-        raw_output = response.choices[0].message.content
+        print("RAW RESPONSE:", response)
 
-        # Clean markdown if any
-        raw_output = raw_output.replace("```json", "").replace("```", "").strip()
-
-        # Convert to JSON safely
-        try:
-            return json.loads(raw_output)
-        except json.JSONDecodeError:
-            return {
-                "error": "Model returned invalid JSON",
-                "raw": raw_output
-            }
+        return {"raw": response.choices[0].message.content}
 
     except Exception as e:
-        return {
-            "error": "Server error",
-            "details": str(e)
-        }
+        print("ERROR:", str(e))
+        return {"error": str(e)}
    
