@@ -20,7 +20,12 @@ app.add_middleware(
 )
 
 # Groq client (SAFE FOR DEPLOYMENT)
-client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+api_key = os.getenv("GROQ_API_KEY")
+
+if not api_key:
+    raise Exception("GROQ_API_KEY not found")
+
+client = Groq(api_key=api_key)
 
 # AI System Prompt
 SYSTEM_PROMPT = """
